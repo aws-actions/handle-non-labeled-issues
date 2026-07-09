@@ -1,0 +1,23 @@
+name: Handle Non-labeled Issue
+description: Applies default label(s) to newly-opened issues that have no labels
+author: Amazon.com, Inc. or its affiliates
+branding:
+  icon: cloud
+  color: orange
+
+inputs:
+  token:
+    description: GitHub token used to read repository labels and modify the issue.
+    required: false
+    default: ${{ github.token }}
+  labels:
+    description: List of label(s) to apply to non-labeled issues, one per line.
+    required: true
+  message:
+    description: Optional comment to post on the issue when a label is applied.
+    required: false
+    default: ''
+
+runs:
+  using: node24
+  main: dist/index.mjs

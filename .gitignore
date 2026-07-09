@@ -1,0 +1,10 @@
+.history
+node_modules
+coverage
+.DS_Store
+Thumbs.db
+build
+test-reports
+*.log
+Config
+.claude

@@ -1,0 +1,42 @@
+on:
+  [pull_request]
+
+name: Run unit tests
+permissions:
+  contents: read
+
+jobs:
+  unit-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    name: Run unit tests
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v5
+      - name: "Setup node"
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+      - name: "Install dependencies"
+        run: npm ci
+      - name: "Run tests"
+        run: npm run test --if-present
+  lint:
+    name: Ensure code standards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v5
+      - name: "Setup node"
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+      - name: "Install dependencies"
+        run: npm ci
+      - name: "Lint code"
+        run: npm run lint --if-present

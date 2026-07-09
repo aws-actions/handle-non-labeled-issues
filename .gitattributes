@@ -1,0 +1,9 @@
+# Normalize all text files to LF on checkout across every platform so that
+# tooling with a fixed line-ending expectation (Biome, markdownlint) behaves
+# identically on Linux, macOS, and Windows CI runners.
+* text=auto eol=lf
+
+# Generated artifacts: keep out of language stats and collapse diffs.
+/dist/** linguist-generated
+/package-lock.json linguist-generated
+/THIRD-PARTY linguist-generated

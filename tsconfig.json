@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedParameters": true,
+    "module": "node20",
+    "resolveJsonModule": true,
+    "outDir": "build",
+    "declaration": false,
+    "newLine": "lf",
+    "noEmitOnError": true,
+    "sourceMap": true,
+    "disableSizeLimit": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2024"],
+    "target": "es2024",
+    "noErrorTruncation": true,
+    "esModuleInterop": true,
+    "rootDir": "src",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["test/**/*.ts"]
+}
