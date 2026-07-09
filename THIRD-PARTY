@@ -387,7 +387,7 @@ The following npm packages may be included in this product:
 
  - @octokit/endpoint@11.0.3
  - @octokit/graphql@9.0.3
- - @octokit/request@10.0.10
+ - @octokit/request@10.0.11
 
 These packages each contain the following license:
 
