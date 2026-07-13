@@ -23869,11 +23869,96 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
+// src/classify.ts
+var BUILTIN_BUG_SIGNALS = [
+  "regression",
+  "crash",
+  "timeout",
+  "fails",
+  "failure",
+  "exception",
+  "reproduce",
+  "reproduction",
+  "expected behavior",
+  "current behavior",
+  "describe the bug",
+  "stack trace",
+  "stacktrace",
+  "data loss",
+  "silent",
+  "caused by",
+  "incorrect",
+  "unexpected",
+  "after updating",
+  "after upgrade",
+  "previously worked",
+  "used to work"
+];
+var BUILTIN_FR_SIGNALS = [
+  "describe the feature",
+  "proposed solution",
+  "use case",
+  "feature request",
+  "it would be",
+  "would be nice",
+  "ability to",
+  "add support",
+  "option to",
+  "consider adding",
+  "suggestion"
+];
+var BUILTIN_BUG_TITLE_SIGNALS = [
+  "throws",
+  "fails",
+  "error",
+  "timeout",
+  "cve",
+  "crash",
+  "broken",
+  "regression",
+  "incorrect",
+  "exception"
+];
+var BUILTIN_FR_TITLE_SIGNALS = ["support", "add", "allow", "enable", "configur"];
+function classify(options) {
+  const { title, body, bugLabel, featureLabel, extraBugSignals, extraFeatureSignals, threshold } = options;
+  const titleLower = title.toLowerCase();
+  const bodyLower = body.toLowerCase();
+  const allBugSignals = [...BUILTIN_BUG_SIGNALS, ...extraBugSignals];
+  const allFrSignals = [...BUILTIN_FR_SIGNALS, ...extraFeatureSignals];
+  let bugScore = 0;
+  let frScore = 0;
+  for (const signal of allBugSignals) {
+    if (bodyLower.includes(signal)) bugScore += 1;
+  }
+  for (const signal of allFrSignals) {
+    if (bodyLower.includes(signal)) frScore += 1;
+  }
+  for (const signal of BUILTIN_BUG_TITLE_SIGNALS) {
+    if (titleLower.includes(signal)) bugScore += 3;
+  }
+  for (const signal of BUILTIN_FR_TITLE_SIGNALS) {
+    if (titleLower.includes(signal)) frScore += 3;
+  }
+  const diff = Math.abs(bugScore - frScore);
+  let label = null;
+  if (diff >= threshold) {
+    label = bugScore > frScore ? bugLabel : featureLabel;
+  }
+  return { label, bugScore, frScore };
+}
+
 // src/main.ts
 async function run() {
   const token = getInput("token", { required: true });
   const requestedLabels = getMultilineInput("labels", { required: true }).map((label) => label.trim()).filter(Boolean);
   const message = getInput("message").trim();
+  const classifyEnabled = getInput("classify").trim().toLowerCase() === "true";
+  const bugLabel = getInput("bug-label").trim() || "bug";
+  const featureLabel = getInput("feature-label").trim() || "feature-request";
+  const extraBugSignals = getMultilineInput("extra-bug-signals").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const extraFeatureSignals = getMultilineInput("extra-feature-signals").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const threshold = Number.parseInt(getInput("classification-threshold") || "2", 10) || 2;
   const { eventName, payload } = context2;
   debug(`Triggered by event "${eventName}" with action "${payload.action}".`);
   if (eventName !== "issues" || payload.action !== "opened") {
@@ -23896,8 +23981,21 @@ async function run() {
   const repoLabels = await octokit.paginate(octokit.rest.issues.listLabelsForRepo, { owner, repo });
   const repoLabelNames = new Set(repoLabels.map((label) => label.name));
   debug(`Repository ${owner}/${repo} defines labels: ${[...repoLabelNames].join(", ")}.`);
-  const labelsToApply = requestedLabels.filter((label) => repoLabelNames.has(label));
-  for (const label of requestedLabels.filter((label2) => !repoLabelNames.has(label2))) {
+  const allRequestedLabels = [...requestedLabels];
+  if (classifyEnabled) {
+    const title = issue2.title ?? "";
+    const body = issue2.body ?? "";
+    const result = classify({ title, body, bugLabel, featureLabel, extraBugSignals, extraFeatureSignals, threshold });
+    debug(`Classification scores \u2014 bug: ${result.bugScore}, feature: ${result.frScore}.`);
+    if (result.label) {
+      allRequestedLabels.push(result.label);
+      info(`Classified issue as "${result.label}".`);
+    } else {
+      info("Classification inconclusive; no category label applied.");
+    }
+  }
+  const labelsToApply = allRequestedLabels.filter((label) => repoLabelNames.has(label));
+  for (const label of allRequestedLabels.filter((label2) => !repoLabelNames.has(label2))) {
     warning(`Label "${label}" does not exist in ${owner}/${repo}; skipping it.`);
   }
   if (labelsToApply.length > 0) {
