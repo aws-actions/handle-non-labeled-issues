@@ -45,7 +45,7 @@
         "@vitest/coverage-v8": "4.1.10",
         "esbuild": "0.28.1",
         "generate-license-file": "4.2.1",
-        "markdownlint-cli": "0.49.0",
+        "markdownlint-cli": "0.49.1",
         "typescript": "7.0.2",
         "vitest": "4.1.10"
     },
