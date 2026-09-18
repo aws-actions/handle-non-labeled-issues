@@ -37,7 +37,7 @@
 
         - name: Run release-please
           id: release
-          uses: googleapis/release-please-action@v4
+          uses: googleapis/release-please-action@v5
           with:
             release-type: node
             token: ${{ env.OSDS_ACCESS_TOKEN }}
