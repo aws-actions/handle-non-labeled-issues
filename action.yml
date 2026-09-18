@@ -1,5 +1,5 @@
 name: Handle Non-labeled Issue
-description: Applies default label(s) to newly-opened issues that have no labels
+description: Applies default label(s) to newly-opened issues that have no labels, with optional bug/feature-request classification.
 author: Amazon.com, Inc. or its affiliates
 branding:
   icon: cloud
@@ -17,6 +17,30 @@ inputs:
     description: Optional comment to post on the issue when a label is applied.
     required: false
     default: ''
+  classify:
+    description: Enable best-effort bug/feature-request classification based on issue content.
+    required: false
+    default: 'false'
+  bug-label:
+    description: Label to apply when issue is classified as a bug.
+    required: false
+    default: 'bug'
+  feature-label:
+    description: Label to apply when issue is classified as a feature request.
+    required: false
+    default: 'feature-request'
+  extra-bug-signals:
+    description: Additional bug signal words/phrases, one per line. Added to built-in list.
+    required: false
+    default: ''
+  extra-feature-signals:
+    description: Additional feature-request signal words/phrases, one per line. Added to built-in list.
+    required: false
+    default: ''
+  classification-threshold:
+    description: Minimum score difference to classify. Higher values produce fewer but more confident classifications.
+    required: false
+    default: '2'
 
 runs:
   using: node24
