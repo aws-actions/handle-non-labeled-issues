@@ -16,7 +16,7 @@
       runs-on: ubuntu-latest
       steps:
         - name: Checkout Repository
-          uses: actions/checkout@v5
+          uses: actions/checkout@v7
           with:
             fetch-depth: 0
 
@@ -45,7 +45,7 @@
             manifest-file: .release-please-manifest.json
 
         - name: Checkout Again
-          uses: actions/checkout@v5
+          uses: actions/checkout@v7
           with:
             fetch-depth: 0
             persist-credentials: false
