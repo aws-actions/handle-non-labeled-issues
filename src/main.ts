@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { classify } from './classify.js';
 
 export async function run(): Promise<void> {
   const token = core.getInput('token', { required: true });
@@ -8,6 +9,20 @@ export async function run(): Promise<void> {
     .map((label) => label.trim())
     .filter(Boolean);
   const message = core.getInput('message').trim();
+
+  // Classification inputs
+  const classifyEnabled = core.getInput('classify').trim().toLowerCase() === 'true';
+  const bugLabel = core.getInput('bug-label').trim() || 'bug';
+  const featureLabel = core.getInput('feature-label').trim() || 'feature-request';
+  const extraBugSignals = core
+    .getMultilineInput('extra-bug-signals')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const extraFeatureSignals = core
+    .getMultilineInput('extra-feature-signals')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const threshold = Number.parseInt(core.getInput('classification-threshold') || '2', 10) || 2;
 
   const { eventName, payload } = github.context;
   core.debug(`Triggered by event "${eventName}" with action "${payload.action}".`);
@@ -37,8 +52,25 @@ export async function run(): Promise<void> {
   const repoLabelNames = new Set(repoLabels.map((label) => label.name));
   core.debug(`Repository ${owner}/${repo} defines labels: ${[...repoLabelNames].join(', ')}.`);
 
-  const labelsToApply = requestedLabels.filter((label) => repoLabelNames.has(label));
-  for (const label of requestedLabels.filter((label) => !repoLabelNames.has(label))) {
+  // Build the full list of labels to apply
+  const allRequestedLabels = [...requestedLabels];
+
+  // Classification
+  if (classifyEnabled) {
+    const title = (issue.title as string) ?? '';
+    const body = (issue.body as string) ?? '';
+    const result = classify({ title, body, bugLabel, featureLabel, extraBugSignals, extraFeatureSignals, threshold });
+    core.debug(`Classification scores — bug: ${result.bugScore}, feature: ${result.frScore}.`);
+    if (result.label) {
+      allRequestedLabels.push(result.label);
+      core.info(`Classified issue as "${result.label}".`);
+    } else {
+      core.info('Classification inconclusive; no category label applied.');
+    }
+  }
+
+  const labelsToApply = allRequestedLabels.filter((label) => repoLabelNames.has(label));
+  for (const label of allRequestedLabels.filter((label) => !repoLabelNames.has(label))) {
     core.warning(`Label "${label}" does not exist in ${owner}/${repo}; skipping it.`);
   }
 
